@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f5fbf">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BBLS Log">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>BBLS 2.0 Workout Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f4;--card:#fff;--ink:#14202b;--mut:#5d6b78;--line:#d5dce3;--acc:#1f5fbf;--onacc:#fff;--ok:#2e7d4f;--okbg:#e1f1e7;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1418;--card:#18202a;--ink:#e8edf2;--mut:#93a1ae;--line:#2b3744;--acc:#6aa5ff;--onacc:#0b1420;--ok:#5fcf8a;--okbg:#14301f}}
+:root[data-theme="dark"]{--bg:#0f1418;--card:#18202a;--ink:#e8edf2;--mut:#93a1ae;--line:#2b3744;--acc:#6aa5ff;--onacc:#0b1420;--ok:#5fcf8a;--okbg:#14301f}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.35 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+#top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding:10px 12px 8px;border-bottom:1px solid var(--line)}
+.w{max-width:720px;margin:0 auto}
+h1{font:700 30px/1 "Barlow Condensed",system-ui,sans-serif;margin:0 0 2px}
+.tag{color:var(--mut);font-size:15px;margin:0 0 8px}
+.chips,.days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.chip{flex:0 0 auto;min-width:44px;height:44px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:600 17px system-ui}
+.days button{flex:1 0 auto;min-height:48px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:600 16px system-ui;padding:0 12px}
+.on{background:var(--acc)!important;color:var(--onacc)!important;border-color:var(--acc)!important}
+main{padding:12px}
+.note{background:var(--card);border-left:4px solid var(--acc);padding:10px 12px;border-radius:8px;margin-bottom:12px;font-size:15px}
+.ex{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+h2{font:700 26px/1.1 "Barlow Condensed",system-ui,sans-serif;margin:0}
+.sch{color:var(--mut);font-size:15px;margin:2px 0 8px}
+.set{display:grid;grid-template-columns:34px 1fr 1fr 56px;gap:8px;align-items:center;margin-bottom:8px}
+.set.h{color:var(--mut);font-size:13px;margin-bottom:2px}
+.set span{text-align:center;font-weight:600}
+input,textarea{width:100%;height:50px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:600 20px system-ui;text-align:center;padding:0 6px}
+textarea{height:90px;text-align:left;font:400 17px system-ui;padding:10px}
+.set button{height:50px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--mut);font-size:24px}
+.set.done button{background:var(--ok);border-color:var(--ok);color:#fff}
+.set.done input{background:var(--okbg)}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:12px 12px 0}
+summary{font-weight:600;min-height:32px}
+.mx{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.mx label{font-size:14px;color:var(--mut)}
+#rest{position:fixed;left:0;right:0;bottom:0;background:var(--acc);color:var(--onacc);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));display:none;align-items:center;justify-content:space-between;z-index:20;font-weight:600}
+#rest button{height:44px;border:0;border-radius:10px;padding:0 14px;margin-left:8px;font:600 16px system-ui}
+#tm{font:700 32px "Barlow Condensed",system-ui,sans-serif}
+.pad{height:90px}
+</style></head><body>
+<div id="top"><div class="w" id="head"></div></div>
+<div class="w"><details><summary>Settings and Google Sheet sync</summary><div class="mx" id="mx"></div></details></div>
+<main class="w" id="app"></main>
+<div id="rest"><span>Rest <span id="tm"></span></span><span><button data-t="30">+30s</button><button data-t="0">Skip</button></span></div>
+<script>
+const P=[70,75,80,80,75,80,85,85,80,85,90,90,85,90,95,50];
+const R=["10","8","6","3","8","6","4","2","6","4","2","1","4","2","AMRAP","5"];
+const S=[4,4,4,2,4,4,4,2,4,4,4,2,4,4,1,2];
+const AR=i=>i<4?"10 to 12":i<12?"8 to 10":"6 to 8";
+const AS=i=>i%4==3?2:4;
+const N={3:"Volume deload: half the sets, same intensity.",7:"Volume deload: half the sets, same intensity.",11:"Volume deload: half the sets, same intensity.",14:"Strength week: one set at 95% for as many reps as possible, then 4 reps at 85% of your max. Next macrocycle: 1 rep or a miss, lower the training max 10 lb. 2 reps, keep it. 3 reps, add 10 lb. 4 or more, add 20 lb.",15:"Full deload: low intensity and volume. Recover before the next macrocycle."};
+const ML={bench:"Bench Press",cg:"Close-Grip Bench",inc:"Incline Bench",mp:"Standing Military Press",sq:"Back Squat",dl:"Deadlift",rg:"Reverse-Grip Bench",smp:"Seated Military Press",fsq:"Front Squat",tbd:"Trap-Bar Deadlift",pp:"Push Press",sd:"Sumo Deadlift"};
+const MK=[["bench","cg","inc","mp","sq","dl"],["bench","rg","smp","fsq","tbd"],["bench","cg","inc","pp","sq","sd"]];
+const D1=[
+["Mon","Upper Body A",[["Barbell Bench Press","bench"],["Close-Grip Bench Press","cg"],["Dumbbell Side Raise","12"],["Triceps Pressdown",""]]],
+["Tue","Pull and Calves",[["Barbell Deadlift","dl"],["Pull-up","BW or add weight"],["One-Arm Dumbbell Row","50"],["Deficit Calf Raise","45"]]],
+["Wed","Upper Body B",[["Standing Military Press","mp"],["Standing Rear Delt Fly","12"],["Alternating Dumbbell Curl","28"],["Dumbbell Side Raise","12"]]],
+["Thu","Legs and Calves",[["Barbell Back Squat","sq"],["Leg Press","85"],["Leg Curl (Lying or Seated)","BW"],["Leg Press Calf Raise",""]]],
+["Fri","Upper Body C",[["Incline Barbell Bench Press","inc"],["Barbell Bench Press","bench"],["Seated Cable Row or T-Bar Row","85"],["Barbell Curl","65"]]]];
+const M=[D1,[
+["Mon","Upper Body A",[["Barbell Bench Press","bench"],["Dip","BW or add weight"],["Dumbbell Rear Delt Fly",""],["EZ-Bar Skullcrusher",""]]],
+["Tue","Pull and Calves",[["Trap-Bar Deadlift","tbd"],["Chin-up","BW or add weight"],["Seated Cable Row","85"],["Standing Calf Raise",""]]],
+["Wed","Upper Body B",[["Seated Military Press","smp"],["Dumbbell Side Raise","12"],["Hammer Curl",""],["Dumbbell Rear Delt Fly",""]]],
+["Thu","Legs and Calves",[["Barbell Front Squat","fsq"],["Barbell Good Morning",""],["Walking Dumbbell Lunge",""],["Seated Calf Raise",""]]],
+["Fri","Upper Body C",[["Reverse-Grip Bench Press","rg"],["Dumbbell Bench Press",""],["Barbell Row",""],["Cable Curl",""]]]],[
+["Mon","Upper Body A",[["Barbell Bench Press","bench"],["Close-Grip Bench Press","cg"],["Dumbbell Side Raise","12"],["Triceps Overhead Press",""]]],
+["Tue","Pull and Calves",[["Sumo Deadlift","sd"],["Pull-up","BW or add weight"],["T-Bar Row",""],["Seated Calf Raise",""]]],
+["Wed","Upper Body B",[["Push Press","pp"],["Machine Rear Delt Fly",""],["Alternating Dumbbell Curl","28"],["Cable Side Raise",""]]],
+["Thu","Legs and Calves",[["Barbell Back Squat","sq"],["Romanian Deadlift",""],["Bulgarian Split Squat",""],["Leg Press Calf Raise",""]]],
+["Fri","Upper Body C",[["Incline Barbell Bench Press","inc"],["Barbell Bench Press","bench"],["One-Arm Dumbbell Row","50"],["EZ-Bar Preacher Curl",""]]]]];
+let st={mx:{bench:215,cg:195,inc:175,mp:125,sq:235,dl:275,rg:0,smp:0,fsq:0,tbd:0,pp:0,sd:0},start:"2026-11-01",w:0,d:0,log:{},notes:{},cfg:{url:"",tok:""},dirty:{},t:0};
+try{Object.assign(st,JSON.parse(localStorage.getItem("bbls1")||"{}"))}catch(e){}
+st.mx=Object.assign({rg:0,smp:0,fsq:0,tbd:0,pp:0,sd:0},st.mx);
+const save=()=>{try{localStorage.setItem("bbls1",JSON.stringify(st))}catch(e){}};
+const $=s=>document.querySelector(s);
+const iso=s=>new Date(s+"T00:00:00"),fm=x=>x.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+function rng(i){const a=iso(st.start);a.setDate(a.getDate()+7*i);const b=new Date(a);b.setDate(a.getDate()+6);return fm(a)+" to "+fm(b)}
+function today(){const n=Math.max(0,Math.floor((Date.now()-iso(st.start))/864e5));st.w=Math.min(47,Math.floor(n/7));st.d=Math.min(4,Math.max(0,n%7-1))}
+let iv,t=0;
+function rest(s){clearInterval(iv);t=s;tick();if(s>0)iv=setInterval(()=>{t--;tick();if(t<=0){clearInterval(iv);try{navigator.vibrate&&navigator.vibrate(300)}catch(e){}}},1000)}
+function tick(){$("#rest").style.display=t>0?"flex":"none";$("#tm").textContent=Math.floor(t/60)+":"+String(t%60).padStart(2,"0")}
+let pt,sy="";
+const tm=()=>new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+function setS(t){sy=t;const a=$("#sy");if(a)a.textContent=t?"· "+t:"";const b=$("#ss");if(b)b.textContent=t}
+function info(aw,d,e){const w=aw&15,[n,k]=M[aw>>4][d][2][e],pr=st.mx[k]!=null;return{n,sets:pr?S[w]:AS(w),reps:pr?R[w]:AR(w),tw:pr?(st.mx[k]?Math.round(st.mx[k]*P[w]/100/5)*5:""):k}}
+function push(){clearTimeout(pt);if(st.cfg.url)pt=setTimeout(flush,1200)}
+async function flush(){
+ if(!st.cfg.url)return;
+ const keys=Object.keys(st.dirty),ds=st.ds,t0=st.t;
+ const rows=keys.map(k=>{const[aw,d,e,s]=k.split("-").map(Number),i=info(aw,d,e),L=st.log[k]||{};return[k,(aw>>4)+1,(aw&15)+1,rng(aw),M[aw>>4][d][0],i.n,s+1,i.tw,i.reps,L.w||"",L.r||"",!!L.x,L.t||Date.now()]});
+ const sent=keys.map(k=>[k,(st.log[k]||{}).t]);
+ if(!rows.length&&!ds)return;
+ setS("syncing…");
+ try{
+  const r=await fetch(st.cfg.url,{method:"POST",body:JSON.stringify({token:st.cfg.tok,rows,settings:ds?{start:st.start,mx:st.mx,notes:st.notes,t:st.t}:undefined})});
+  const j=await r.json();if(!j.ok)throw 0;
+  sent.forEach(([k,t])=>{if((st.log[k]||{}).t==t)delete st.dirty[k]});
+  if(ds&&st.t==t0)st.ds=0;
+  save();setS("synced "+tm());
+ }catch(err){setS("offline, will retry")}
+}
+async function pull(){
+ if(!st.cfg.url)return;
+ setS("syncing…");
+ try{
+  const r=await fetch(st.cfg.url+"?token="+encodeURIComponent(st.cfg.tok)+"&_="+Date.now()),j=await r.json();
+  if(j.error)throw 0;
+  for(const k in j.log){const o=j.log[k],L=st.log[k];if(!L||(o.t||0)>(L.t||0)){st.log[k]=o;delete st.dirty[k]}}
+  const q=j.settings;
+  if(q&&q.t>(st.t||0)){st.start=q.start||st.start;st.mx=Object.assign(st.mx,q.mx);st.notes=q.notes||st.notes;st.t=q.t}
+  save();drawMx();render();setS("synced "+tm());flush();
+ }catch(err){setS("couldn’t sync")}
+}
+function render(){
+ const aw=st.w,w=aw&15,d=st.d,ex=M[aw>>4][d][2];let tot=0,done=0,h="";
+ ex.forEach(([n,k],e)=>{
+  const pr=st.mx[k]!=null,sets=pr?S[w]:AS(w),reps=pr?R[w]:AR(w);
+  const tw=pr?(st.mx[k]?Math.round(st.mx[k]*P[w]/100/5)*5:0):k;
+  h+=`<section class="ex"><h2>${n}</h2><p class="sch">${pr?`${sets} × ${reps} at ${P[w]}% · ${tw?tw+" lb":"enter your training max"}`:`${sets} × ${reps} · stop 1 rep short of failure${k?" · "+k:""}`}</p><div class="set h"><span></span><span>Weight</span><span>Reps</span><span></span></div>`;
+  for(let s=0;s<sets;s++){
+   const key=`${aw}-${d}-${e}-${s}`,L=st.log[key]||{};tot++;if(L.x)done++;
+   h+=`<div class="set ${L.x?"done":""}"><span>${s+1}</span><input inputmode="decimal" data-k="${key}" data-f="w" value="${L.w||""}" placeholder="${pr?(tw||"lb"):(k&&k.length<5?k:"lb")}" aria-label="Weight, set ${s+1}"><input inputmode="numeric" data-k="${key}" data-f="r" value="${L.r||""}" placeholder="${reps}" aria-label="Reps, set ${s+1}"><button data-c="${key}" data-p="${pr?1:0}" aria-label="Mark set ${s+1} done">✓</button></div>`}
+  h+="</section>"});
+ $("#app").innerHTML=(N[w]?`<div class="note">${N[w]}</div>`:"")+h+`<textarea id="nt" placeholder="Notes for this workout">${st.notes[aw+"-"+d]||""}</textarea><div class="pad"></div>`;
+ $("#head").innerHTML=`<h1>Week ${aw+1} · ${M[0][d][0]}: ${M[aw>>4][d][1]}</h1><p class="tag">Macrocycle ${(aw>>4)+1}, week ${w+1} of 16 · ${rng(aw)} · ${done} of ${tot} sets done <span id="sy">${sy?"· "+sy:""}</span></p><div class="chips">${Array.from({length:48},(_,i)=>`<button class="chip ${i==aw?"on":""}" data-w="${i}">${i+1}</button>`).join("")}</div><div class="days"><button data-today="1">Today</button>${M[0].map((x,i)=>`<button class="${i==d?"on":""}" data-d="${i}">${x[0]}</button>`).join("")}</div>`;
+ const c=$(".chips"),on=$(".chip.on");c.scrollLeft=on.offsetLeft-c.offsetLeft-c.clientWidth/2+22;
+}
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;const D2=b.dataset;
+ if(D2.today){today();save();drawMx();render();scrollTo(0,0)}
+ else if(D2.w!=null){st.w=+D2.w;save();drawMx();render();scrollTo(0,0)}
+ else if(D2.d!=null){st.d=+D2.d;save();render();scrollTo(0,0)}
+ else if(D2.c){const L=st.log[D2.c]=st.log[D2.c]||{};L.x=!L.x;L.t=Date.now();st.dirty[D2.c]=1;save();push();if(L.x)rest(D2.p=="1"?180:90);const y=scrollY;render();scrollTo(0,y)}
+ else if(D2.t!=null){rest(D2.t=="0"?0:t+30)}
+ else if(D2.sync){pull()}});
+document.addEventListener("input",e=>{const x=e.target;
+ if(x.dataset.f){const L=st.log[x.dataset.k]=st.log[x.dataset.k]||{};L[x.dataset.f]=x.value;L.t=Date.now();st.dirty[x.dataset.k]=1;save();push()}
+ else if(x.id=="nt"){st.notes[st.w+"-"+st.d]=x.value;st.t=Date.now();st.ds=1;save();push()}});
+document.addEventListener("change",e=>{const x=e.target;
+ if(x.dataset.u!=null){st.cfg.url=x.value.trim();save();pull();return}
+ if(x.dataset.tk!=null){st.cfg.tok=x.value.trim();save();pull();return}
+ if(x.dataset.s){st.start=x.value||st.start;st.t=Date.now();st.ds=1;save();render();push();return}
+ if(x.dataset.m){st.mx[x.dataset.m]=+x.value||0;st.t=Date.now();st.ds=1;save();const y=scrollY;render();scrollTo(0,y);push()}});
+function drawMx(){$("#mx").innerHTML=`<div><label>Start date (a Sunday)</label><input type="date" data-s="1" value="${st.start}"></div>`+MK[st.w>>4].map(k=>`<div><label>${ML[k]}</label><input inputmode="numeric" data-m="${k}" value="${st.mx[k]||""}" placeholder="lb"></div>`).join("")+`<div style="grid-column:1/-1"><label>Google Sheets web app URL</label><input type="url" data-u="1" value="${st.cfg.url}" placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" autocomplete="off" style="font-size:15px;text-align:left"></div><div style="grid-column:1/-1"><label>Access token</label><input data-tk="1" value="${st.cfg.tok}" autocapitalize="off" autocomplete="off" style="font-size:15px;text-align:left"></div><button data-sync="1" class="chip" style="grid-column:1/-1;width:100%">Sync now</button><p id="ss" class="tag" style="grid-column:1/-1;margin:0">${sy}</p>`}
+drawMx();
+render();
+addEventListener("online",flush);document.addEventListener("visibilitychange",()=>{document.visibilityState=="visible"?pull():flush()});pull();
+if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
+</script></body></html>
